@@ -1,0 +1,1 @@
+cmd /c '"C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvars64.bat" && mvn clean package -Pnative -Dquarkus.native.container-build=true  -Dquarkus.container-image.build=true -Dquarkus.native.container-runtime=docker'

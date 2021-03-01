@@ -1,0 +1,10 @@
+version: '3.7'
+
+services:
+  camel-integration:
+    image: 'eugpp/camel-integration'
+    container_name: integration-camel-native
+    environment:
+      - FILE_DESTINATION=/dest/data
+    volumes:
+      - './data:/dest/data'
