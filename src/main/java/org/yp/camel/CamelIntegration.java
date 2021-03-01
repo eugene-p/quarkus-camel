@@ -1,26 +1,27 @@
 package org.yp.camel;
 
-import org.yp.camel.models.Site;
+import org.yp.camel.models.SiteList;
 
 import org.apache.camel.LoggingLevel;
 import org.apache.camel.Predicate;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.caffeine.CaffeineConstants;
-import org.apache.camel.component.jacksonxml.ListJacksonXMLDataFormat;
+import org.apache.camel.component.jacksonxml.JacksonXMLDataFormat;
 import org.apache.camel.Exchange;
 import static org.apache.camel.support.builder.PredicateBuilder.not;
+
 
 /**
  * CamelIntegration
  */
 public class CamelIntegration extends RouteBuilder {
 
-    ListJacksonXMLDataFormat cityPageWeather = new ListJacksonXMLDataFormat(Site.class);
+    JacksonXMLDataFormat cityPageWeather = new JacksonXMLDataFormat(SiteList.class);
     Predicate GotResult = header(CaffeineConstants.ACTION_HAS_RESULT).isEqualTo(true);
 
     @Override
     public void configure() throws Exception {
-        from("timer:GetWeatherInfo?period=40000").routeId("Get weather info")
+        from("timer:GetWeatherInfo?period=3600000").routeId("Get weather info")
             // Setting up constants
             .setHeader("CITY_LIST_CACHE_KEY", constant("CITY_LIST_CACHE_KEY"))
             .setHeader("CITY_LIST_CACHE", constant("CITY_LIST_CACHE"))
@@ -28,16 +29,17 @@ public class CamelIntegration extends RouteBuilder {
             .setHeader("CITY_CACHE", constant("CITY_CACHE"))
             .log(LoggingLevel.INFO, ">".repeat(6) + "Getting City list " + ">".repeat(6))
             .to("direct:getCityList")
-            .unmarshal(cityPageWeather)
+            .unmarshal().jacksonxml(cityPageWeather.getUnmarshalType())
+            .setBody(simple("${body.getSites}"))
             .split(body()).stopOnException()//.parallelProcessing()
                 .filter(simple("${body.getProvinceCode} == 'BC'"))
                 // .log("${body}")
                 .to("seda:processCity?concurrentConsumers=2")
-                .choice()
-                    .when(simple("${header.CamelSplitIndex} > 10"))
-                        .throwException(new Exception("Enough"))
-                    .end()
-                .end()
+                // .choice()
+                //     .when(simple("${header.CamelSplitIndex} > 10"))
+                //         .throwException(new Exception("Enough"))
+                //     .end()
+                // .end()
             .end()
         .end();
 

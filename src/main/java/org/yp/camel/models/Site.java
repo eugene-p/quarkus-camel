@@ -1,18 +1,16 @@
 package org.yp.camel.models;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlElement;
 
-@JacksonXmlRootElement
 public class Site {
-    @JacksonXmlProperty(isAttribute = true)
+    @XmlAttribute(name = "code")
     private String code;
-    @JsonProperty()
+    @XmlElement
     private String nameEn;
-    @JsonProperty()
+    @XmlElement
     private String nameFr;
-    @JsonProperty()
+    @XmlElement
     private String provinceCode;
 
     Site() {super();}
@@ -21,6 +19,22 @@ public class Site {
         this.nameEn = nameEn;
         this.nameFr = nameFr;
         this.provinceCode = provinceCode;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public void setProvinceCode(String provinceCode) {
+        this.provinceCode = provinceCode;
+    }
+
+    public void setNameEn(String nameEn) {
+        this.nameEn = nameEn;
+    }
+
+    public void setNameFr(String nameFr) {
+        this.nameFr= nameFr;
     }
 
     public String getProvinceCode(){
@@ -33,6 +47,10 @@ public class Site {
 
     public String getNameEn() {
         return this.nameEn;
+    }
+
+    public String getNameFr() {
+        return this.nameFr;
     }
 
     @Override
