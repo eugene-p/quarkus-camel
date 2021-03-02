@@ -1,27 +1,22 @@
 package org.yp.camel;
 
-import org.yp.camel.models.SiteList;
-
 import org.apache.camel.LoggingLevel;
 import org.apache.camel.Predicate;
+import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.caffeine.CaffeineConstants;
-import org.apache.camel.component.jacksonxml.JacksonXMLDataFormat;
 import org.apache.camel.Exchange;
 import static org.apache.camel.support.builder.PredicateBuilder.not;
-
 
 /**
  * CamelIntegration
  */
 public class CamelIntegration extends RouteBuilder {
 
-    JacksonXMLDataFormat cityPageWeather = new JacksonXMLDataFormat(SiteList.class);
     Predicate GotResult = header(CaffeineConstants.ACTION_HAS_RESULT).isEqualTo(true);
-
     @Override
     public void configure() throws Exception {
-        from("timer:GetWeatherInfo?period=3600000").routeId("Get weather info")
+         from("timer:GetWeatherInfo?period=3600000").routeId("Get weather info")
             // Setting up constants
             .setHeader("CITY_LIST_CACHE_KEY", constant("CITY_LIST_CACHE_KEY"))
             .setHeader("CITY_LIST_CACHE", constant("CITY_LIST_CACHE"))
@@ -29,11 +24,9 @@ public class CamelIntegration extends RouteBuilder {
             .setHeader("CITY_CACHE", constant("CITY_CACHE"))
             .log(LoggingLevel.INFO, ">".repeat(6) + "Getting City list " + ">".repeat(6))
             .to("direct:getCityList")
-            .unmarshal().jacksonxml(cityPageWeather.getUnmarshalType())
-            .setBody(simple("${body.getSites}"))
-            .split(body()).stopOnException()//.parallelProcessing()
-                .filter(simple("${body.getProvinceCode} == 'BC'"))
-                // .log("${body}")
+            .setHeader("ProvinceToGet", constant("BC"))
+            .process(new XmlParser())
+            .split(body()).stopOnException().parallelProcessing()
                 .to("seda:processCity?concurrentConsumers=2")
                 // .choice()
                 //     .when(simple("${header.CamelSplitIndex} > 10"))
@@ -44,9 +37,14 @@ public class CamelIntegration extends RouteBuilder {
         .end();
 
         from("seda:processCity").routeId("Process city weather")
-            .setHeader("CityCode", simple("${body.getCode}"))
-            .setHeader("CityProvinceCode", simple("${body.getProvinceCode}"))
-            .setHeader("CityNameEn", simple("${body.getNameEn}"))
+            .process(new Processor(){
+                public void process(Exchange exchange) {
+                    Site s = exchange.getIn().getBody(Site.class);
+                    exchange.getIn().setHeader("CityCode", s.getCode());
+                    exchange.getIn().setHeader("CityProvinceCode", s.getProvinceCode());
+                    exchange.getIn().setHeader("CityNameEn", s.getNameEn());
+                }
+            })
             .log(LoggingLevel.INFO, ">".repeat(3) + "Getting Weather information for ${header.CityNameEn} [${header.CityCode}] " + ">".repeat(3))
             .to("direct:getBcCityInfo")
             .to("direct:processCityFile")
