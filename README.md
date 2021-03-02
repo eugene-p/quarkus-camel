@@ -1,5 +1,24 @@
 # camel-integration project
 
+## Building native docker
+
+Run
+```ShellScript
+build-native-docker.ps1
+```
+
+## Native docker is available
+
+https://hub.docker.com/repository/docker/eugpp/camel-integration
+
+## To start native docker container 
+Run
+```ShellScript
+docker-compose up
+```
+
+
+
 This project uses Quarkus, the Supersonic Subatomic Java Framework.
 
 If you want to learn more about Quarkus, please visit its website: https://quarkus.io/ .
